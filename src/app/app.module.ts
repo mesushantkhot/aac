@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpModule } from '@angular/http';
 import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule }  from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { TypeaheadAddressComponent } from './typeahead-address/typeahead-address.component';
@@ -19,7 +20,8 @@ import { LocalStorageService } from './typeahead-address/storage.service';
   imports: [
     BrowserModule, 
     HttpModule,
-    FormsModule
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [AutoCompleteSearchService, LocalStorageService, { provide: GlobalRef, useClass: BrowserGlobalRef }],
   bootstrap: [AppComponent]

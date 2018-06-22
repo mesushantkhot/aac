@@ -2,6 +2,7 @@ import { Component, PLATFORM_ID, Inject, Input, Output, EventEmitter, OnInit, On
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { GlobalRef } from './windowRef.service';
 import { AutoCompleteSearchService } from './auto-complete.service';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 
 export interface Settings {
@@ -38,7 +39,7 @@ export interface Settings {
   }
 })
 export class TypeaheadAddressComponent implements OnInit {
-
+  public fullAddress:string;
   public locationInput: string = '';
   public gettingCurrentLocationFlag: boolean = false;
   public dropdownOpen: boolean = false;
@@ -51,6 +52,7 @@ export class TypeaheadAddressComponent implements OnInit {
   private selectedDataIndex: number = -1;
   private recentSearchData: any = [];
   private userSelectedOption: any = '';
+  public googleForm: FormGroup;
   private defaultSettings: Settings = {
     geoPredictionServerUrl: '',
     geoLatLangServiceUrl: '',
@@ -82,12 +84,21 @@ export class TypeaheadAddressComponent implements OnInit {
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object,
   private _elmRef: ElementRef,
-  private _autoCompleteSearchService: AutoCompleteSearchService) { }
+  private _autoCompleteSearchService: AutoCompleteSearchService,
+  private fb: FormBuilder) { }
 
   ngOnInit() {
     if (!this.moduleinit) {
       this.moduleInit();
     }
+    this.googleForm = this.fb.group({
+      streetNumber: '', 
+      streetName:'',
+      state:'',
+      city:'',
+      country:'',
+      zipCode:''
+    });
   }
 
   
@@ -265,9 +276,44 @@ export class TypeaheadAddressComponent implements OnInit {
   private getPlaceLocationInfo(selectedData: any): any {
     if (this.settings.useGoogleGeoApi) {
       this._autoCompleteSearchService.getGeoPlaceDetail(selectedData.place_id).then((data: any) => {
-        // if (data) {
-        //   this.setRecentLocation(data);
-        // }
+        this.fullAddress = data.formatted_address;
+        let address = {};
+           if(data && data.address_components && data.address_components.length > 0) {
+            data.address_components.forEach(addr => {
+              if(addr && addr.types && addr.types[0]){
+
+                switch(addr.types[0]){
+                  case "street_number":address['streetNumber'] = addr['long_name'];
+                                      break;
+                  case "route":address['streetName'] = addr['long_name'];
+                                      break;
+                  case "neighborhood":address['neighborhoodname'] = addr['long_name'];
+                                      break;
+                  case "locality":address['city'] = addr['long_name'];
+                                      break;
+                  case "administrative_area_level_2":address['adminArea'] = addr['long_name'];
+                                      break;
+                  case "administrative_area_level_1":address['state'] = addr['short_name'];
+                                      break;
+                  case "country":address['country'] = addr['long_name'];
+                                      break;
+                  case "postal_code":address['zipcode'] = addr['long_name'];
+                                      break;
+                }
+              }
+            });
+           }
+           this.googleForm.get('streetName').setValue(address['streetName']);
+           this.googleForm.get('streetNumber').setValue(address['streetNumber']);
+           this.googleForm.get('city').setValue(address['city']);
+           this.googleForm.get('state').setValue(address['state']);
+           this.googleForm.get('country').setValue(address['country']);
+           this.googleForm.get('zipCode').setValue(address['zipcode']);
+           console.log(this.googleForm.value);
+
+
+            
+           
       });
     }
   }
